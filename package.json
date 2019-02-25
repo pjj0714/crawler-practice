@@ -10,9 +10,15 @@
   "license": "ISC",
   "dependencies": {
     "@google/maps": "^0.5.5",
+    "axios": "^0.18.0",
     "cheerio": "^1.0.0-rc.2",
+    "cheerio-httpcli": "^0.7.3",
+    "dotenv": "^6.2.0",
     "exceljs": "^1.7.0",
+    "mysql2": "^1.6.5",
     "puppeteer": "^1.12.2",
-    "readline-sync": "^1.4.9"
+    "readline-sync": "^1.4.9",
+    "sequelize": "^4.42.0",
+    "sequelize-cli": "^5.4.0"
   }
 }

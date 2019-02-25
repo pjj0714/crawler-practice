@@ -1,12 +1,13 @@
 const puppeteer = require("puppeteer");
 const api = require('./API')
+var restaurants = require('./models/').restaurants
 var googleMapsClient = require("@google/maps").createClient({
   key: api
 });
 
 async function crawler() {
   for (let pages = 1; pages < 12; pages++) {
-    const browser = await puppeteer.launch();
+    const browser = await puppeteer.launch({headless:false});
     const page = await browser.newPage();
     await page.goto(
       `https://store.naver.com/restaurants/list?filterId=r08&page=${pages}&query=%EC%B1%84%EC%8B%9D`
@@ -19,7 +20,8 @@ async function crawler() {
       );
 
       for (let link of linkList) {
-        await crawlerDetail(link);
+       let a=  await crawlerDetail(link);
+       await restaurants.create(a)
       }
 
       await browser.close();
@@ -31,7 +33,7 @@ async function crawler() {
   return;
 }
 async function crawlerDetail(url) {
-  const browser = await puppeteer.launch();
+  const browser = await puppeteer.launch({headless:false});
   const page = await browser.newPage();
   await page.goto(url);
 
@@ -45,13 +47,11 @@ async function crawlerDetail(url) {
     console.log("titleNameErr : ", err.message);
   }
   try {
-    const imagesSelector =
-      ".flick_content._page.eg-flick-panel > .thumb_area > div.thumb > img";
     const imageSelec =
       "div.flick_content._page.eg-flick-panel > .thumb_area._item > a.thumb > img";
-    res.images = await page.$$eval(imageSelec, list => {
-      list = list.slice(0, 5);
-      return list.map(el => el.getAttribute("src"));
+    res.imageURL = await page.$$eval(imageSelec, list => {
+      list = list.slice(0, 8);
+      return list.map(el => el.getAttribute("src")).join(',');
     });
   } catch (err) {
     console.log("iamgeErr : ", err.message);
@@ -71,7 +71,7 @@ async function crawlerDetail(url) {
     const addresses = await page.$$eval(addressesSelector, addrs =>
       addrs.map(addr => addr.innerHTML)
     );
-    res.addresses = addresses.slice(0, 2);
+    res.address = addresses[0];
 
     await googleMapsClient.geocode({ address: addresses[0] }, async function(
       err,
@@ -94,9 +94,10 @@ async function crawlerDetail(url) {
     // await page.waitForSelector(pricesSelector, waitOption);
     // await page.waitForSelector(menuNamesSelector, waitOption);
     const menuNames = await page.$$eval(menuNamesSelector, list =>
-      list.map(item => item.innerHTML)
+      list.map(item => item.innerHTML).join(' ,')
     );
     res.menu = menuNames;
+    res.vegLevel = '비건'
   } catch (error) {
     res.menu = "";
     console.error("menuErr : ", error.message);
@@ -105,4 +106,5 @@ async function crawlerDetail(url) {
   console.log(res);
   return res;
 }
+
 crawler();
